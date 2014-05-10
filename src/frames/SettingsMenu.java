@@ -1,5 +1,7 @@
 package frames;
 
+import tools.*;
+
 import java.io.*;
 import java.awt.event.*;
 import java.awt.image.*;
@@ -8,14 +10,21 @@ import java.awt.*;
 import javax.imageio.*;
 import javax.swing.*;
 
+import java.util.*;
+
 public class SettingsMenu extends JPanel implements ActionListener
 {
 	private static final long serialVersionUID = 1;
+	
+	private ConfigWriter confWriter;
 
 	private BufferedImage background;
 	private MainFrame parent;
 	
-	private JButton singlePlayer, multiPlayer, settings, back;
+	private JLabel musicLabel, separator;
+	private JRadioButton musicButtonOn, musicButtonOff;
+	private ButtonGroup musicSel;
+	private JButton back;
 	
 	public SettingsMenu(MainFrame parent)
 	{
@@ -23,8 +32,16 @@ public class SettingsMenu extends JPanel implements ActionListener
 		
 		try 
 		{
+			confWriter = new ConfigWriter("config/settings.cfg");
 			background = ImageIO.read(new File("images/background.jpg"));
-		} catch (IOException e) 
+		} 
+		catch (FileNotFoundException e)
+		{
+			System.out.println("FileNotFoundException beim Erstellen der Settings.cfg");
+			e.printStackTrace();
+			System.exit(2);
+		}
+		catch (IOException e) 
 		{
 			System.out.println("IOException beim Laden des Hintergrundbildes");
 			e.printStackTrace();
@@ -39,24 +56,34 @@ public class SettingsMenu extends JPanel implements ActionListener
 		cont.ipadx = 100;
 		cont.ipady = 20;
 		
-		singlePlayer = new JButton("Singelplayer");
-		cont.gridx = 0;
-		cont.gridy = 0;
-		add(singlePlayer, cont);
+		separator = new JLabel("");
 		
-		multiPlayer = new JButton("Multiplayer");
-		cont.gridx = 0;
-		cont.gridy = 1;
-		add(multiPlayer, cont);
-		
-		settings = new JButton("Settings");
+		musicLabel = new JLabel("Music:");
 		cont.gridx = 0;
 		cont.gridy = 2;
-		add(settings, cont);
+		add(musicLabel, cont);
 		
-		back = new JButton("Back");
+		musicButtonOn = new JRadioButton("On");
+		musicButtonOn.setBackground(Color.LIGHT_GRAY);
+		musicButtonOn.setSelected(true);
+		cont.gridx = 1;
+		add(musicButtonOn, cont);
+		musicButtonOff = new JRadioButton("Off");
+		musicButtonOff.setBackground(Color.LIGHT_GRAY);
+		cont.gridx = 2;
+		add(musicButtonOff, cont);
+		
+		musicSel = new ButtonGroup();
+		musicSel.add(musicButtonOn);
+		musicSel.add(musicButtonOff);
+		
 		cont.gridx = 0;
 		cont.gridy = 3;
+		add(separator, cont);
+		
+		back = new JButton("Back");
+		cont.gridx = 1;
+		cont.gridy = 4;
 		add(back, cont);
 		
 		back.addActionListener(this);
@@ -66,7 +93,19 @@ public class SettingsMenu extends JPanel implements ActionListener
 	public void actionPerformed(ActionEvent event) 
 	{
 		if(event.getSource() == back)
+		{
+			for(Enumeration<AbstractButton> buttons = musicSel.getElements(); buttons.hasMoreElements();)
+			{
+				AbstractButton curButton = buttons.nextElement();
+				
+				if(curButton.isSelected())
+					confWriter.writeLine("music = " + curButton.getText().toLowerCase());
+			}
+			
+			confWriter.close();
+			
 			parent.init(new MainMenu(parent));
+		}
 	}
 	
 	@Override
@@ -74,5 +113,7 @@ public class SettingsMenu extends JPanel implements ActionListener
 	{
 		super.paintComponent(g);
 		g.drawImage(background, 0, 0, null);
+		g.setColor(Color.LIGHT_GRAY);
+		g.fillRect(170, 160, 460, 400);
 	}
 }
